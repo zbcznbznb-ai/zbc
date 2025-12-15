@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Pro | 沉浸式学习系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+            --bg-gradient: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        body {
+            background-image: var(--bg-gradient);
+            background-attachment: fixed;
+            background-size: cover;
+            font-family: 'Poppins', 'Noto Sans SC', sans-serif;
+            min-height: 100vh;
+            padding-bottom: 50px;
+            color: #444;
+        }
+
+        /* 玻璃拟态容器 */
+        .glass-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft);
+            padding: 30px;
+            margin-top: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 导航栏美化 */
+        .nav-pills { background: #f1f3f5; border-radius: 50px; padding: 5px; display: inline-flex; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); }
+        .nav-pills .nav-link { border-radius: 40px; color: #666; font-weight: 600; padding: 10px 25px; transition: all 0.3s; }
+        .nav-pills .nav-link.active { background: var(--primary-gradient); color: white; box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4); transform: scale(1.05); }
+        
+        /* 单词卡片 */
+        .word-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+            overflow: hidden;
+        }
+        .word-card:hover { transform: translateY(-5px); box-shadow: 0 15px 50px rgba(0,0,0,0.1); border-color: #a3bffa; }
+        
+        /* 装饰元素 */
+        .word-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(118,75,162,0.05) 0%, rgba(255,255,255,0) 70%);
+            z-index: 0; pointer-events: none;
+        }
+
+        /* 字体特效 (已修复CSS警告) */
+        .spelling-text {
+            font-size: 4rem; font-weight: 800;
+            background: -webkit-linear-gradient(45deg, #667eea, #764ba2);
+            background-clip: text;
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent;
+            cursor: pointer; transition: 0.3s;
+        }
+        
+        /* 按钮美化 */
+        .btn-gradient-primary { background: var(--primary-gradient); border: none; color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: 0.3s; }
+        .btn-gradient-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6); color: white; }
+        .btn-gradient-secondary { background: white; border: 2px solid #e2e8f0; color: #4a5568; transition: 0.3s; }
+        .btn-gradient-secondary:hover { border-color: #cbd5e0; background: #f7fafc; transform: translateY(-2px); }
+
+        /* 录音按钮动画 */
+        .mic-btn { width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; border: none; background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: 0.3s; }
+        .mic-btn.active { background: #fc5c7d; color: white; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(252, 92, 125, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(252, 92, 125, 0); } 100% { box-shadow: 0 0 0 0 rgba(252, 92, 125, 0); } }
+
+        /* 统计卡片 */
+        .stat-card { background: #f8f9fa; border-radius: 15px; padding: 20px; border: 1px solid #edf2f7; }
+        
+        /* 表格优化 */
+        .table-custom thead { background: var(--primary-gradient); color: white; }
+        .table-custom th { border: none; padding: 15px; }
+        .table-custom td { vertical-align: middle; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            
+            <div class="glass-container">
+                
+                <div class="text-center mb-5">
+                    <h1 class="fw-bold mb-2" style="color: #2d3748;">English Pro <span style="font-size: 0.4em; vertical-align: super; color: #764ba2;">v2.1</span></h1>
+                    <p class="text-muted">打造你的沉浸式单词记忆空间</p>
+                </div>
+
+                <div class="d-flex justify-content-center mb-5">
+                    <ul class="nav nav-pills" id="myTab" role="tablist">
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#learn">📖 记忆卡片</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#spell">✍️ 拼写闯关</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#speak">🎤 口语教练</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#stats" onclick="renderCharts()">📊 学习数据</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#lib" onclick="renderTable()">🗂️ 词汇表</button></li>
+                    </ul>
+                </div>
+
+                <div class="tab-content" id="myTabContent">
+                    
+                    <div class="tab-pane fade show active" id="learn">
+                        <div class="row justify-content-center">
+                            <div class="col-md-8 text-center">
+                                
+                                <div class="d-flex justify-content-center align-items-center mb-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="mistake-switch" onchange="toggleMode()" style="width: 3em; height: 1.5em; cursor: pointer;">
+                                        <label class="form-check-label fw-bold text-secondary ms-2" for="mistake-switch" id="mode-label" style="line-height: 1.5em;">
+                                            📚 模式：全部单词
+                                        </label>
+                                    </div>
+                                    <span class="badge bg-danger rounded-pill ms-2" id="mistake-count" style="display:none; animation: fadeIn 0.3s;">0</span>
+                                </div>
+
+                                <div class="word-card mb-4 position-relative">
+                                    <span class="badge bg-light text-dark position-absolute top-0 start-50 translate-middle-x mt-3 shadow-sm border" id="t1-pos">词性加载中...</span>
+                                    <h1 class="spelling-text my-3" id="t1-spelling">Loading</h1>
+                                    <h3 class="text-secondary fw-normal" id="t1-meaning">...</h3>
+                                    <div class="mt-3">
+                                        <span class="badge rounded-pill text-bg-info text-white" id="t1-unit">Unit</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-center gap-3">
+                                    <button class="btn btn-gradient-secondary rounded-pill px-4 py-2" onclick="playAudio(currentWord.spelling)">🔊 听发音</button>
+                                    <button class="btn btn-gradient-primary rounded-pill px-5 py-2 fw-bold" onclick="nextWord('t1')">下一个 Next ➡️</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="spell">
+                        <div class="row justify-content-center">
+                            <div class="col-md-7 text-center">
+                                <h5 class="text-muted mb-4">根据中文拼写单词</h5>
+                                <div class="card border-0 shadow-sm p-5 mb-4" style="background: #fff; border-radius: 20px;">
+                                    <h2 class="text-primary fw-bold mb-4" id="t2-meaning">...</h2>
+                                    <div class="input-group input-group-lg mb-4 shadow-sm rounded-pill overflow-hidden">
+                                        <input type="text" id="t2-input" class="form-control text-center border-0 bg-light" placeholder="Type here..." autocomplete="off">
+                                        <button class="btn btn-gradient-primary px-4" onclick="checkSpelling()">Check</button>
+                                    </div>
+                                    <div id="t2-result" style="height: 30px; font-weight: bold;"></div>
+                                </div>
+                                <button class="btn btn-link text-muted text-decoration-none" onclick="playAudio(currentWord.spelling)">🔊 提示：听发音</button>
+                                <button class="btn btn-link text-muted text-decoration-none ms-3" onclick="nextWord('t2')">跳过此题</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="speak">
+                        <div class="row justify-content-center">
+                            <div class="col-md-8 text-center">
+                                <h5 class="text-muted mb-4">请大声朗读</h5>
+                                <div class="display-3 fw-bold mb-5" style="color: #2d3748;" id="t3-spelling">...</div>
+                                
+                                <div class="d-flex justify-content-center align-items-center gap-4 mb-5">
+                                    <button class="btn btn-light rounded-circle shadow-sm" style="width: 50px; height: 50px;" onclick="playAudio(currentWord.spelling)">🔊</button>
+                                    
+                                    <button class="mic-btn" id="btn-record" onclick="startRecording()">
+                                        🎙️
+                                    </button>
+                                    
+                                    <button class="btn btn-light rounded-circle shadow-sm" style="width: 50px; height: 50px;" onclick="nextWord('t3')">➡️</button>
+                                </div>
+                                
+                                <div class="p-3 rounded-4 bg-white shadow-sm border">
+                                    <small class="text-muted d-block mb-1">识别结果</small>
+                                    <h4 id="t3-result" class="fw-bold mb-2">...</h4>
+                                    <div id="t3-feedback"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="stats">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="stat-card h-100">
+                                    <h5 class="fw-bold text-center mb-4">🎯 正确率分布</h5>
+                                    <div style="height: 250px;"><canvas id="correctChart"></canvas></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="stat-card h-100">
+                                    <h5 class="fw-bold text-center mb-4">🔥 学习热度 (近7天)</h5>
+                                    <div style="height: 250px;"><canvas id="activityChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-4">
+                            <button class="btn btn-outline-danger btn-sm rounded-pill px-4" onclick="clearStats()">🗑️ 重置数据</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="lib">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="position-relative w-50">
+                                <input type="text" id="lib-search" class="form-control rounded-pill ps-4 bg-light border-0" placeholder="🔍 搜索单词 / 中文..." onkeyup="filterTable()">
+                            </div>
+                            <span class="badge bg-primary rounded-pill px-3 py-2" id="total-count">Total: 0</span>
+                        </div>
+                        <div class="table-responsive rounded-4 shadow-sm border bg-white" style="max-height: 500px;">
+                            <table class="table table-hover table-custom mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">单词</th>
+                                        <th>词性</th>
+                                        <th>中文释义</th>
+                                        <th>单元</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lib-body">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div> </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="word_data.js"></script>
+
+<script>
+    // === 核心逻辑 ===
+    let currentWord = null;
+    let isMistakeMode = false;
+    
+    // 读取统计数据
+    let stats = JSON.parse(localStorage.getItem('studyStats')) || {
+        correct: 0, wrong: 0, totalLearned: 0, activity: {}
+    };
+    
+    // 读取错题本
+    let mistakeList = JSON.parse(localStorage.getItem('myMistakes')) || [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof wordLibrary === 'undefined' || wordLibrary.length === 0) {
+            alert("⚠️ 严重错误：未检测到数据文件！请先运行 export_data.py");
+            return;
+        }
+        
+        updateMistakeBadge();
+        nextWord('all');
+        renderTable();
+        
+        document.getElementById("t2-input").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") checkSpelling();
+        });
+    });
+
+    // === 切换模式 (全部 / 错题本) ===
+    function toggleMode() {
+        const switchEl = document.getElementById('mistake-switch');
+        const labelEl = document.getElementById('mode-label');
+        
+        isMistakeMode = switchEl.checked;
+        
+        if (isMistakeMode) {
+            if (mistakeList.length === 0) {
+                alert("🎉 太棒了！你的错题本是空的。\n\n去【拼写闯关】多做几道题吧！");
+                switchEl.checked = false;
+                isMistakeMode = false;
+                return;
+            }
+            labelEl.innerHTML = '<span class="text-danger">❌ 模式：只看错题</span>';
+        } else {
+            labelEl.innerHTML = '📚 模式：全部单词';
+        }
+        nextWord();
+    }
+
+    // === 切词逻辑 ===
+    function nextWord(tabSource) {
+        let pool = wordLibrary;
+
+        if (isMistakeMode) {
+            pool = wordLibrary.filter(w => mistakeList.includes(w.id));
+            if (pool.length === 0) {
+                alert("错题已全部攻克！自动切换回普通模式。");
+                document.getElementById('mistake-switch').click();
+                return;
+            }
+        }
+
+        const randomIndex = Math.floor(Math.random() * pool.length);
+        currentWord = pool[randomIndex];
+        updateUI();
+        
+        // 重置状态
+        document.getElementById('t2-input').value = "";
+        document.getElementById('t2-input').className = "form-control text-center border-0 bg-light";
+        document.getElementById('t2-result').innerHTML = "";
+        document.getElementById('t3-result').innerText = "...";
+        document.getElementById('t3-feedback').innerHTML = "";
+    }
+
+    function updateUI() {
+        if(!currentWord) return;
+        // Tab 1
+        document.getElementById('t1-spelling').innerText = currentWord.spelling;
+        document.getElementById('t1-meaning').innerText = currentWord.meaning;
+        document.getElementById('t1-pos').innerText = currentWord.part_of_speech || "N/A";
+        document.getElementById('t1-unit').innerText = currentWord.unit || "Extra";
+        // Tab 2 & 3
+        document.getElementById('t2-meaning').innerText = currentWord.meaning;
+        document.getElementById('t3-spelling').innerText = currentWord.spelling;
+    }
+
+    function playAudio(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'en-US'; u.rate = 0.9;
+            window.speechSynthesis.speak(u);
+        }
+    }
+
+    // === 拼写检查 (含错题逻辑) ===
+    function checkSpelling() {
+        const input = document.getElementById('t2-input');
+        const val = input.value.trim().toLowerCase();
+        const correct = currentWord.spelling.toLowerCase();
+        const resDiv = document.getElementById('t2-result');
+
+        if (val === correct) {
+            input.classList.remove('is-invalid'); input.classList.add('is-valid');
+            let extraMsg = "";
+            
+            // 答对时，如果是错题，将其移除
+            if (mistakeList.includes(currentWord.id)) {
+                removeFromMistakes(currentWord.id);
+                extraMsg = ' <span class="badge bg-success rounded-pill">已移出错题本</span>';
+            }
+            
+            resDiv.innerHTML = `<span class="text-success">🎉 Correct! Amazing!</span>${extraMsg}`;
+            playAudio("Correct");
+            updateStats(true);
+            setTimeout(() => nextWord('t2'), 1200);
+        } else {
+            input.classList.add('is-invalid');
+            resDiv.innerHTML = `<span class="text-danger">❌ Correct is: ${currentWord.spelling}</span>`;
+            playAudio(currentWord.spelling);
+            updateStats(false);
+            addToMistakes(currentWord.id); // 答错加入错题本
+        }
+    }
+
+    // === 错题本管理 ===
+    function addToMistakes(id) {
+        if (!mistakeList.includes(id)) {
+            mistakeList.push(id);
+            saveMistakes();
+        }
+    }
+    function removeFromMistakes(id) {
+        mistakeList = mistakeList.filter(item => item !== id);
+        saveMistakes();
+    }
+    function saveMistakes() {
+        localStorage.setItem('myMistakes', JSON.stringify(mistakeList));
+        updateMistakeBadge();
+    }
+    function updateMistakeBadge() {
+        const badge = document.getElementById('mistake-count');
+        if (mistakeList.length > 0) {
+            badge.style.display = 'inline-block';
+            badge.innerText = mistakeList.length;
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    // === 语音识别 ===
+    function startRecording() {
+        const btn = document.getElementById('btn-record');
+        const resultDisplay = document.getElementById('t3-result');
+        const feedback = document.getElementById('t3-feedback');
+
+        if (!('webkitSpeechRecognition' in window)) {
+            alert("Please use Chrome or Edge browser."); return;
+        }
+
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        btn.classList.add('active');
+        resultDisplay.innerText = "Listening...";
+        resultDisplay.style.color = "#667eea";
+
+        recognition.start();
+
+        recognition.onresult = (event) => {
+            const speechResult = event.results[0][0].transcript.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+            const target = currentWord.spelling.toLowerCase();
+            resultDisplay.innerText = speechResult;
+            resultDisplay.style.color = "#212529";
+            
+            if (speechResult === target) {
+                feedback.innerHTML = '<span class="badge bg-success rounded-pill px-3 py-2">🌟 Perfect Pronunciation!</span>';
+            } else {
+                feedback.innerHTML = '<span class="badge bg-warning text-dark rounded-pill px-3 py-2">🤔 Try again?</span>';
+            }
+            btn.classList.remove('active');
+        };
+
+        recognition.onerror = () => { resultDisplay.innerText = "No Sound"; btn.classList.remove('active'); };
+        recognition.onend = () => btn.classList.remove('active');
+    }
+
+    // === 数据统计 ===
+    function updateStats(isCorrect) {
+        if (isCorrect) stats.correct++; else stats.wrong++;
+        stats.totalLearned++;
+        const today = new Date().toISOString().split('T')[0];
+        if (!stats.activity[today]) stats.activity[today] = 0;
+        stats.activity[today]++;
+        localStorage.setItem('studyStats', JSON.stringify(stats));
+    }
+
+    function clearStats() {
+        if(confirm("Reset all statistics and mistakes?")) {
+            localStorage.removeItem('studyStats'); 
+            localStorage.removeItem('myMistakes');
+            location.reload();
+        }
+    }
+
+    let chart1, chart2;
+    function renderCharts() {
+        if (chart1) chart1.destroy();
+        if (chart2) chart2.destroy();
+
+        chart1 = new Chart(document.getElementById('correctChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Correct', 'Wrong'],
+                datasets: [{
+                    data: [stats.correct, stats.wrong],
+                    backgroundColor: ['#48bb78', '#f56565'],
+                    borderWidth: 0
+                }]
+            },
+            options: { maintainAspectRatio: false, cutout: '70%' }
+        });
+
+        const labels = Object.keys(stats.activity).slice(-7);
+        const data = Object.values(stats.activity).slice(-7);
+        chart2 = new Chart(document.getElementById('activityChart'), {
+            type: 'bar',
+            data: {
+                labels: labels.length ? labels : ['Today'],
+                datasets: [{
+                    label: 'Words Learned',
+                    data: data.length ? data : [0],
+                    backgroundColor: '#667eea',
+                    borderRadius: 50,
+                    barThickness: 20
+                }]
+            },
+            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } } }
+        });
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('lib-body');
+        document.getElementById('total-count').innerText = `Total: ${wordLibrary.length}`;
+        let html = "";
+        const limit = 100;
+        wordLibrary.slice(0, limit).forEach(w => {
+            html += `<tr><td class="ps-4 fw-bold text-dark">${w.spelling}</td><td><span class="badge bg-light text-dark border">${w.part_of_speech || '-'}</span></td><td class="text-muted">${w.meaning}</td><td><span class="small text-muted">${w.unit || ''}</span></td></tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function filterTable() {
+        const text = document.getElementById('lib-search').value.toLowerCase();
+        const tbody = document.getElementById('lib-body');
+        const filtered = wordLibrary.filter(w => w.spelling.toLowerCase().includes(text) || w.meaning.includes(text)).slice(0, 100);
+        let html = "";
+        filtered.forEach(w => {
+            html += `<tr><td class="ps-4 fw-bold text-dark">${w.spelling}</td><td><span class="badge bg-light text-dark border">${w.part_of_speech || '-'}</span></td><td class="text-muted">${w.meaning}</td><td><span class="small text-muted">${w.unit || ''}</span></td></tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+</script>
+
+</body>
+</html>
